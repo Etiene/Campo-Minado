@@ -1,6 +1,6 @@
 /*
 //======================//
-//  CAMPO MINADO  v1.3  //
+//  CAMPO MINADO  v1.5  //
 //======================//
 Por: Etiene Dalcol, Mat 1211996, T3WA
 Para: Disciplina de Programação I ministrada por Simone Barbosa, PUC-RIO, Junho de 2012
@@ -10,6 +10,8 @@ v1.0: 06/06/2012 Jogo Pronto!
 v1.1: 06/06/2012 Limpando a tela pra ficar bonitinho. (Acho que só funciona em windows)
 v1.2: 06/06/2012 Corrigindo bug na contagem dos vizinhos. (Checagem das bordas)
 v1.3: 06/06/2012 Corrigindo bug na geração do campo que não era aleatória de verdade. (Colocando seed no rand)
+v1.4: 10/06/2012 Corrigindo bug na abertura de brancos. As fronteiras não estavam abrindo.
+v1.5: 10/06/2012 Adicionando as linhas e colunas dos outros lados pra visualizar melhor o campo.
 To-do:
 -Modificar a lógica para gerar o campo com as minas após a escolha da primeira coordenada. Usuário perder de primeira é TENSO.
 Morri assim algumas e resolvi ajeitar. Como a senhora também não previu isso pois pediu pra sortear as minas primeiro resolvi já entregar
@@ -70,22 +72,21 @@ void exibir_campo(char campo[][MAX_COLUNAS], int x, int y){
 	int i,j;
 	char lin = 'A',col = 'A';
 
-	printf("Exibindo campo:\n  ");
-	for(i=0;i<x;i++){
-		if(i==0){
-			for(j=0;j<y;j++){
-				printf("%c ",col);
-				col++;
-			}
-			printf("\n");
-		}
+	printf("Exibindo campo:\n ");
+	for(i=0;i<y;i++,col++)
+		printf(" %c",col);
+	printf("\n");
+	for(i=0;i<x;i++,lin++){
 		printf("%c ",lin);
-		lin++;
-		for(j=0;j<y;j++){
+		for(j=0;j<y;j++)
 			printf("%c ",campo[i][j]);
-		}
+		printf("%c ",lin);
 		printf("\n");
 	}
+	printf(" ");
+	for(i=0,col='A';i<y;i++,col++)
+		printf(" %c",col);
+	printf("\n");
 }
 
 void contar_vizinhos(char campo[][MAX_COLUNAS], int x, int y){
@@ -145,49 +146,43 @@ void abrir_ou_marcar(char * c){
 
 void abrir_brancos(char jogo[][MAX_COLUNAS], char campo[][MAX_COLUNAS], int x, int y, int cx, int cy){
 	/*coord*/
-	if((campo[cx][cy]==' ') && (jogo[cx][cy]=='_')){
-		jogo[cx][cy]=' ';
-	}
+	jogo[cx][cy]=' ';
 	/*esquerda*/
-	if((cy-1>=0) && (campo[cx][cy-1]==' ') && (jogo[cx][cy-1]=='_')){
-		jogo[cx][cy-1]=' ';
-		abrir_brancos(jogo,campo,x,y,cx,cy-1);
-	}
+	if(cy-1>=0)
+		if(campo[cx][cy-1]==' ' && jogo[cx][cy-1]=='_')
+			abrir_brancos(jogo,campo,x,y,cx,cy-1);
+		else
+			jogo[cx][cy-1] = campo[cx][cy-1];
 	/*direita*/
-	if((cy+1<y) && (campo[cx][cy+1]==' ') && (jogo[cx][cy+1]=='_')){
-		jogo[cx][cy+1]=' ';
-		abrir_brancos(jogo,campo,x,y,cx,cy+1);
-	}
+	if(cy+1<y) 
+		if(campo[cx][cy+1]==' ' && jogo[cx][cy+1]=='_')
+			abrir_brancos(jogo,campo,x,y,cx,cy+1);
+		else
+			jogo[cx][cy+1] = campo[cx][cy+1];
 	/*embaixo*/
-	if((cx+1<x) && (campo[cx+1][cy]==' ') && (jogo[cx+1][cy]=='_')){
-		jogo[cx+1][cy]=' ';
-		abrir_brancos(jogo,campo,x,y,cx+1,cy);
-	}
+	if(cx+1<x)
+		if(campo[cx+1][cy]==' ' && jogo[cx+1][cy]=='_')
+			abrir_brancos(jogo,campo,x,y,cx+1,cy);
+		else
+			jogo[cx+1][cy] = campo[cx+1][cy];
 	/*em cima*/
-	if((cx-1>=0) && (campo[cx-1][cy]==' ') && (jogo[cx-1][cy]=='_')){
-		jogo[cx-1][cy]=' ';
-		abrir_brancos(jogo,campo,x,y,cx-1,cy);
-	}
+	if(cx-1>=0)
+		if(campo[cx-1][cy]==' ' && jogo[cx-1][cy]=='_')
+			abrir_brancos(jogo,campo,x,y,cx-1,cy);
+		else
+			jogo[cx-1][cy] = campo[cx-1][cy];
 	/*sudoeste -> só abre se esquerda ou embaixo estiver aberto*/
-	if((cx+1<x) && (cy-1>=0) && (campo[cx+1][cy-1]==' ') && (jogo[cx+1][cy-1]=='_') && ((campo[cx+1][cy]==' ') || (campo[cx][cy-1]==' '))){
-		jogo[cx+1][cy-1]=' ';
+	if(cx+1<x && cy-1>=0 && campo[cx+1][cy-1]==' ' && jogo[cx+1][cy-1]=='_' && (campo[cx+1][cy]==' ' || campo[cx][cy-1]==' '))
 		abrir_brancos(jogo,campo,x,y,cx+1,cy-1);
-	}
 	/*sudeste -> só abre se direita ou embaixo estiver aberto*/
-	if((cy+1<y) && (cx+1<x) && (campo[cx+1][cy+1]==' ') && (jogo[cx+1][cy+1]=='_') && ((campo[cx+1][cy]==' ') || (campo[cx][cy+1]==' '))){
-		jogo[cx+1][cy+1]=' ';
+	if(cy+1<y && cx+1<x && campo[cx+1][cy+1]==' ' && jogo[cx+1][cy+1]=='_' && (campo[cx+1][cy]==' ' || campo[cx][cy+1]==' '))
 		abrir_brancos(jogo,campo,x,y,cx+1,cy+1);
-	}
 	/*noroeste -> só abre se esquerda ou em cima estiver aberto*/
-	if((cy-1>=0) && (cx-1>=0) && (campo[cx-1][cy-1]==' ') && (jogo[cx-1][cy-1]=='_') && ((campo[cx-1][cy]==' ') || (campo[cx][cy-1]==' '))){
-		jogo[cx-1][cy-1]=' ';
+	if(cy-1>=0 && cx-1>=0 && campo[cx-1][cy-1]==' ' && jogo[cx-1][cy-1]=='_' && (campo[cx-1][cy]==' ' || campo[cx][cy-1]==' '))
 		abrir_brancos(jogo,campo,x,y,cx-1,cy-1);
-	}
 	/*nordeste -> só abre se direito ou emcima estiver aberto*/
-	if((cy+1<y) && (cx-1>=0) && (campo[cx-1][cy+1]==' ') && (jogo[cx-1][cy+1]=='_') && ((campo[cx-1][cy]==' ') || (campo[cx][cy+1]==' '))){
-		jogo[cx-1][cy+1]=' ';
+	if(cy+1<y && cx-1>=0 && campo[cx-1][cy+1]==' ' && jogo[cx-1][cy+1]=='_' && (campo[cx-1][cy]==' ' || campo[cx][cy+1]==' '))
 		abrir_brancos(jogo,campo,x,y,cx-1,cy+1);
-	}
 }
 
 void jogar(char campo[][MAX_COLUNAS], char jogo[][MAX_COLUNAS], int x, int y, int tinicio){
